@@ -4,12 +4,13 @@ It initializes logging, retrieves links and processed files, and uses a headless
 to navigate through the website, collecting data for each specified quarter and week.
 
 Functions:
-- get_link(_type): Retrieve a link from 'links.json' based on the specified type.
-- get_init(_file_name): Initialize logging and retrieve file name, logger, and server type.
-- get_already_processed(_path): Retrieve a list of files that have already been processed within the specified path.
+- get_link(link_type): Retrieve a link from 'links.json' based on the specified type.
+- get_init(file_name): Initialize logging and retrieve file name, logger, and server type.
+- get_already_processed(path): Retrieve a list of files that have already been processed within the specified path.
 - initiate_browser(): Initialize and configure a headless Chrome browser with specific options.
-- get_sb_week_options(_browser): Retrieve and parse options from the "sbWeek" dropdown in a given browser.
-- log_error(_error, _logger): Log errors using the logger.
+- get_sb_week_options(browser): Retrieve and parse options from the "sbWeek" dropdown in a given browser.
+- log_error(error, logger): Log errors using the logger.
+- process_week_data(browser, item, logger): Process data for a specific week.
 
 Usage:
 - Run the script to perform web scraping and collect data from the TeamForm website.
@@ -22,9 +23,11 @@ import json
 import logging
 import os
 import sys
+import time
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
+import pandas as pd
 import selenium.webdriver as webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -40,31 +43,26 @@ PAGES_NUMBER = 17
 
 #
 
-def get_link(_type):
+def get_link(link_type: str) -> str:
 	"""
 	Retrieve a link from the 'links.json' file based on the specified type.
-	
+
 	Parameters:
-	- _type (str): The type of link to retrieve.
-	
+	- link_type (str): The type of link to retrieve.
+
 	Returns:
 	- str: The corresponding link if found, or an empty string if the type is not present in the 'links.json' file.
-	
-	Example:
-	get_link('example_type')
-	'https://www.example.com'
 	"""
-	
 	with open('../../_work/cred_prediction_cpu/projects/scraping__teamform/_credentials/links.json') as file:
-		return json.load(file).get(_type, '')
+		return json.load(file).get(link_type, '')
 
 
-def get_init(_file_name):
+def get_init(file_name):
 	"""
 	Initialize logging and retrieve file name, logger, and server type.
 	
 	Parameters:
-	- _file_name (str): The name of the file being processed.
+	- file_name (str): The name of the file being processed.
 	
 	Returns:
 	- Tuple[str, logging.Logger, str]: A tuple containing the processed file name, logger instance, and server type.
@@ -73,7 +71,6 @@ def get_init(_file_name):
 	file_name, logger, server_type = get_init('example_file.py')
 	'example_file', <Logger>, 'development'
 	"""
-	
 	server_type = None
 	try:
 		os_name = os.uname()
@@ -83,14 +80,14 @@ def get_init(_file_name):
 	except AttributeError as _:
 		server_type = 'development'
 	
-	if '\\' in _file_name:
-		file_name = _file_name.split('\\')[-1].replace('.py', '').strip()
+	if '\\' in file_name:
+		file_name = file_name.split('\\')[-1].replace('.py', '').strip()
 	
-	elif '/' in _file_name:
-		file_name = _file_name.split('/')[-1].replace('.py', '').strip()
+	elif '/' in file_name:
+		file_name = file_name.split('/')[-1].replace('.py', '').strip()
 	
 	else:
-		file_name = _file_name.replace('.py', '').strip()
+		file_name = file_name.replace('.py', '').strip()
 	
 	#
 	
@@ -108,12 +105,12 @@ def get_init(_file_name):
 	return file_name, logger, server_type
 
 
-def get_already_processed(_path):
+def get_already_processed(path):
 	"""
 	Retrieve a list of files that have already been processed within the specified path.
 	
 	Parameters:
-	- _path (str): The base path to search for processed files.
+	- path (str): The base path to search for processed files.
 	
 	Returns:
 	- List[str]: A list of file names (without the '.gzip' extension) that have already been processed.
@@ -122,9 +119,8 @@ def get_already_processed(_path):
 	get_already_processed('/path/to/files')
 	['file1', 'file2', 'file3']
 	"""
-	
 	already_processed_list = []
-	for path in Path(_path).glob('**/*.gzip'):
+	for path in Path(path).glob('**/*.gzip'):
 		already_processed_list.append(str(path).split('\\')[-1].replace('.gzip', ''))
 	
 	return already_processed_list
@@ -140,7 +136,6 @@ def initiate_browser():
 	Example:
 	browser = initiate_browser()
 	"""
-	
 	options = Options()
 	
 	options.add_argument('--kiosk')
@@ -160,12 +155,12 @@ def initiate_browser():
 	return browser
 
 
-def get_sb_week_options(_browser):
+def get_sb_week_options(browser):
 	"""
 	Retrieve and parse options from the "sbWeek" dropdown in a given browser.
 	
 	Parameters:
-	- _browser (selenium.webdriver.Chrome): An instance of the Chrome browser.
+	- browser (selenium.webdriver.Chrome): An instance of the Chrome browser.
 	
 	Returns:
 	- List[Tuple[int, int]]: A list of tuples representing week options sorted by quarter and week number.
@@ -175,8 +170,7 @@ def get_sb_week_options(_browser):
 	options = get_sb_week_options(browser)
 	[(1, 1), (1, 2), (2, 1), ...]
 	"""
-	
-	sb_week_select = Select(_browser.find_element(By.XPATH, '//*[@id="sbWeek"]'))
+	sb_week_select = Select(browser.find_element(By.XPATH, '//*[@id="sbWeek"]'))
 	
 	temp_array = sb_week_select.options
 	sb_week_options = [value.accessible_name for value in temp_array]
@@ -186,17 +180,56 @@ def get_sb_week_options(_browser):
 	return sorted(sb_week_options, key=lambda value: (value[1], value[0]))
 
 
-def log_error(_error, _logger):
+def log_error(error, logger):
 	"""
 	Log errors using the logger.
 	
 	Parameters:
-	- _error (Exception): The exception object.
-	- _logger (logging.Logger): Logger instance for error logging.
+	- error (Exception): The exception object.
+	- logger (logging.Logger): Logger instance for error logging.
 	"""
-	
 	_type, _obj, _tb = sys.exc_info()
 	file_name = os.path.split(_tb.tb_frame.f_code.co_filename)[1]
 	
-	error_string = '; '.join([str(datetime.datetime.now()), ' <<>> '.join([str(value) for value in [_error, _type, file_name, _tb.tb_lineno]]), __name__])
-	_logger.info(error_string)
+	error_string = '; '.join([str(datetime.datetime.now()), ' <<>> '.join([str(value) for value in [error, _type, file_name, _tb.tb_lineno]]), __name__])
+	logger.info(error_string)
+
+
+def process_week_data(browser, item, logger):
+	"""
+	Process data for a specific week.
+
+	Parameters:
+	- browser (selenium.webdriver.Chrome): An instance of the Chrome browser.
+	- item (Tuple[int, int]): A tuple representing quarter and week number.
+	- logger (logging.Logger): Logger instance for error logging.
+	"""
+	try:
+		browser.get(f'{SIMPLE_URL}{item[1]}/q{item[0]}')
+		
+		for _ in range(PAGES_NUMBER):
+			
+			try:
+				load_more_button = browser.find_element(By.XPATH, '//*[@id="rankBtn"]')
+				browser.execute_script("arguments[0].click();", load_more_button)
+				time.sleep(17)
+			
+			except Exception as error:
+				log_error(error, logger)
+				break
+		
+		table = browser.find_element(By.XPATH, '//*[@id="rankTable"]')
+		rows_list = table.find_elements(By.TAG_NAME, 'tr')[1:]
+		data = []
+		
+		for row_value in rows_list:
+			values_list = row_value.find_elements(By.TAG_NAME, 'td')
+			values_list = [value.text.strip() for value in values_list]
+			data.append(values_list[3: 6])
+		
+		df = pd.DataFrame(data, columns=['league', 'country', 'value']).drop_duplicates()
+		df.to_parquet('_data/league/' + '_'.join([f'{item[1]}', f'q{item[0]}']) + '.gzip')
+	
+	except Exception as error:
+		log_error(error, logger)
+		sys.exit(0)

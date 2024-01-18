@@ -16,7 +16,6 @@ Usage:
 - Modify URLs and file paths as needed for different scraping tasks.
 
 Functions:
-- process_week_data(_browser, _item, _logger): Process data for a specific week.
 - main(): Main function for web scraping TeamForm website data.
 
 Example:
@@ -26,55 +25,10 @@ if __name__ == "__main__":
 """
 
 import os.path
-import sys
-import time
 
-import pandas as pd
-from selenium.webdriver.common.by import By
 from tqdm import tqdm
 
-from _functions import get_already_processed, get_init, get_sb_week_options, initiate_browser, log_error, PAGES_NUMBER, SIMPLE_URL, URL
-
-
-def process_week_data(_browser, _item, _logger):
-	"""
-	Process data for a specific week.
-	
-	Parameters:
-	- _browser (selenium.webdriver.Chrome): An instance of the Chrome browser.
-	- _item (Tuple[int, int]): A tuple representing quarter and week number.
-	- _logger (logging.Logger): Logger instance for error logging.
-	"""
-	
-	try:
-		_browser.get(f'{SIMPLE_URL}{_item[1]}/q{_item[0]}')
-		
-		for _ in range(PAGES_NUMBER):
-			
-			try:
-				load_more_button = _browser.find_element(By.XPATH, '//*[@id="rankBtn"]')
-				_browser.execute_script("arguments[0].click();", load_more_button)
-				time.sleep(17)
-			
-			except Exception as error:
-				log_error(error, _logger)
-				break
-		
-		table = _browser.find_element(By.XPATH, '//*[@id="rankTable"]')
-		rows_list = table.find_elements(By.TAG_NAME, 'tr')[1:]
-		data = []
-		
-		for row_value in rows_list:
-			values_list = row_value.find_elements(By.TAG_NAME, 'td')
-			values_list = [value.text.strip() for value in values_list]
-			data.append(values_list[3: 6])
-		
-		df = pd.DataFrame(data, columns=['league', 'country', 'value']).drop_duplicates()
-		df.to_parquet('_data/league/' + '_'.join([f'{_item[1]}', f'q{_item[0]}']) + '.gzip')
-	
-	except Exception as error:
-		log_error(error, _logger)
-		sys.exit(0)
+from functions import get_already_processed, get_init, get_sb_week_options, initiate_browser, process_week_data, URL
 
 
 def main():

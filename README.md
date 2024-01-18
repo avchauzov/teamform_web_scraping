@@ -1,17 +1,24 @@
 # TeamForm Web Scraping Project
 
-## Overview
+## Description
 
-This project performs web scraping to collect league ranking data from the TeamForm website. It utilizes a headless Chrome browser to navigate through the website, collecting data for each specified quarter/week.
+This project performs web scraping to collect league ranking data from the TeamForm website. It utilizes a headless Chrome browser to navigate through the site, collecting data for each specified quarter/week.
 
-## Table of Contents
+## Features
 
-- [Installation](#installation)
-- [Usage](#usage)
-- [Dependencies](#dependencies)
-- [File Structure](#file-structure)
-- [Contributing](#contributing)
-- [FAQ](#faq)
+- **Web Scraping for League Ranking Data**: Collects league ranking data from the TeamForm website, providing insights into team performances and standings.
+- **Headless Chrome Browser Utilization**: Employs a headless Chrome browser for efficient navigation and data collection from web pages.
+- **Configurable Data Load**: The `PAGES_NUMBER` variable in `_functions.py` allows control over how much data is loaded by determining the number of times the 'Load More' button is clicked, each click revealing additional rows of data.
+- **Memory Efficiency**: Designed to avoid memory issues by limiting the number of pages loaded. The script clicks the 'Load More' button a predetermined number of times (e.g., 17 times) to fetch a substantial yet manageable amount of data.
+- **Focused Data Retrieval**: Currently, the script is specialized in retrieving league data. While it does not support 'Club' or 'National' data at the moment, its structure is conducive to future expansions in this area.
+
+## Python Version Support
+
+This project supports Python 3.8.
+
+![Python 3.8](https://img.shields.io/badge/python-3.8-blue.svg)
+
+Note: This software has not been tested on earlier or later versions of Python.
 
 ## Installation
 
@@ -43,54 +50,17 @@ pip install -r requirements.txt
 python main.py
 ```
 
-## Dependencies
+## License
 
-- pandas
-- selenium
-- tqdm (for convenience)
-- pyarrow OR fastparquet (for ```gzip``` support)
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-Install dependencies using:
+## Contact
 
-```bash
-pip install -r requirements.txt
-```
+- **Name:** Andrew Chauzov
+- **Email:** [avchauzov@gmail.com](mailto:avchauzov@gmail.com)
 
-## File Structure
+For more information or inquiries about the project, feel free to reach out via email.
 
-```plaintext
-teamform_web_scraping/
-│
-├── _data/
-│   └── league/
-├── _logs/
-├── _credentials/
-│   └── links.json
-├── _functions.py
-├── main.py
-├── README.md
-└── requirements.txt
-```
+## Acknowledgements
 
-## Contributing
-
-Feel free to contribute to the project. Fork the repository, create a branch, make your changes, and submit a pull request.
-
-## FAQ
-
-### Q: What is the `PAGES_NUMBER` variable in `_functions.py`?
-
-A: The `PAGES_NUMBER` variable in `_functions.py` determines how many times the 'Load More' button is clicked at the bottom of the page. Each click reveals additional rows of data. Adjusting this variable allows you to control the amount of data loaded.
-
-### Q: Does it scrape ALL data?
-
-A: No. Due to a memory issue that arises when attempting to load and process all available data, the scraping script is designed to load a limited number of pages. Specifically, it clicks the 'Load More' button 17 times, fetching a substantial but manageable amount of data. This approach helps avoid memory-related challenges during
-the scraping process.
-
-### Q: Does this script support 'Club' or 'National' data?
-
-A: No, at this moment. The current version of the script focuses on retrieving data for leagues. While there are no immediate plans to support 'Club' or 'National' data, the script's structure makes it relatively straightforward to extend functionality for these categories in the future.
-
-### Q: Which Python versions does this script support?
-
-A: The script has been tested on Python 3.8.
+- [Selenium](https://www.selenium.dev/): A powerful tool for browser automation used in this project for efficient web scraping.
