@@ -53,7 +53,7 @@ def get_link(link_type: str) -> str:
 	Returns:
 	- str: The corresponding link if found, or an empty string if the type is not present in the 'links.json' file.
 	"""
-	with open('../../_work/cred_prediction_cpu/projects/scraping__teamform/_credentials/links.json') as file:
+	with open('_credentials/links.json') as file:
 		return json.load(file).get(link_type, '')
 
 
